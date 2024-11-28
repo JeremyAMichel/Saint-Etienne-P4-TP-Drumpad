@@ -2,11 +2,12 @@ document.addEventListener("keydown", handleKeyPress);
 document.addEventListener("keyup", handleKeyPress);
 
 let isRecording = false;
+let isPlaying = false;
 let recordedKeys = [];
 let startRecordDate;
 
 function handleKeyPress(event) {
-  console.log(event);
+  // console.log(event);
 
   // Si l'event est declenché en boucle car la personne laisse la touche appuyer, on ne fait rien !
   if (event.repeat) {
@@ -35,6 +36,11 @@ function handleKeyPress(event) {
       // 82 est la touche de record
       triggerRecord();
     }
+
+
+    if (event.keyCode === 80){
+      triggerPlay(key);
+    }
   }
 
   playSound(event);
@@ -58,7 +64,7 @@ function playSound(event) {
       timeCode: Date.now() - startRecordDate,
     });
 
-    console.log(recordedKeys);
+    // console.log(recordedKeys);
   }
 }
 
@@ -70,22 +76,45 @@ function triggerRecord() {
   startRecordDate = Date.now();
 }
 
-// setTimeout(() => {
-//   console.log("hello au bout de 2 secondes");
+function triggerPlay(key) {
+  isPlaying = true;
+  key.classList.add("playing");
+  if (isPlaying) {
+    playBeat(recordedKeys).then(() => {
+      isPlaying = false;
+      key.classList.remove("playing");
+    })
+  }
+}
 
-// }, 2000)
 
-// setInterval(() => {
-  // const newKeyBoardDownEvent = new KeyboardEvent("keydown", { keyCode: 65 });
 
-  // const newKeyBoardUpEvent = new KeyboardEvent("keyup", { keyCode: 65 });
-  // document.dispatchEvent(newKeyBoardDownEvent);
-
-  // setTimeout(() => {
-  //   document.dispatchEvent(newKeyBoardUpEvent);
-  // }, 300)
+async function playBeat(recordedKeys) {
+  const promises = recordedKeys.map((key) => {
+     
+    const { keyCode, timeCode} = key;
   
-// }, 2000);
+    return simulateKey(keyCode, timeCode)
+  });
 
-// const newKeyBoardEvent = new KeyboardEvent("keydown", {keyCode: 65 });
-// document.dispatchEvent(newKeyBoardEvent);
+  console.log(promises);
+  
+
+  await Promise.all(promises);
+}
+
+
+function simulateKey(keyCode, timeCode) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const keyDownEvent = new KeyboardEvent("keydown", {keyCode: keyCode});
+      document.dispatchEvent(keyDownEvent);
+
+      setTimeout(() => {
+        const keyUpEvent = new KeyboardEvent("keyup", {keyCode: keyCode});
+        document.dispatchEvent(keyUpEvent);
+        resolve();
+      }, 300);
+    }, timeCode);
+  })
+}
